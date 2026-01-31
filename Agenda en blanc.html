@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agenda Claustre La Plana</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Kalam:wght@300;400&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-paper: #fefaf0; --text-main: #5d544b; --accent: #d4a373;
+            --c-default: #ffffff; --c-gris: #f1f5f9; --c-link: #2563eb;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; background-color: #f7f3eb; 
+            background-image: url("https://www.transparenttextures.com/patterns/cream-paper.png");
+            color: var(--text-main); margin: 0; padding: 20px; 
+        }
+
+        /* Elements d'Interfície */
+        .controls-global { position: fixed; top: 20px; right: 20px; z-index: 999; display: flex; gap: 10px; }
+        .btn-circle {
+            background: white; width: 45px; height: 45px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e5e0d8; cursor: pointer;
+        }
+
+        header { text-align: center; margin-bottom: 20px; }
+        .docent-input {
+            border: none; background: rgba(255,255,255,0.5); border-radius: 5px;
+            font-size: 1.1rem; text-align: center; width: 80%; max-width: 300px;
+            color: var(--accent); font-family: 'Kalam', cursive; outline: none;
+        }
+
+        .days-container { display: flex; flex-direction: column; gap: 10px; max-width: 450px; margin: 0 auto; }
+        .day-btn { padding: 18px; border-radius: 15px; background: white; border: 1px solid #e5e0d8; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        
+        .view-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-paper); z-index: 100; display: none; flex-direction: column; padding: 20px; overflow-y: auto; }
+        .session-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #eee; cursor: pointer; }
+        
+        textarea { width: 100%; height: 220px; border-radius: 12px; padding: 15px; font-family: 'Kalam', cursive; font-size: 1.1rem; border: 1px solid var(--accent); outline: none; margin-top: 10px; box-sizing: border-box; }
+        
+        .btn-utility { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; font-weight: 600; }
+
+        /* ESTILS PDF MILLORATS PER ADAPTACIÓ DE TEXT */
+        #pdf-template { display: none; background: white; width: 287mm; padding: 5mm; }
+        .pdf-table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 1pt solid #d4a373; }
+        .pdf-table th, .pdf-table td { 
+            border: 0.5pt solid #d4a373; 
+            padding: 6px 4px; 
+            vertical-align: top; 
+            word-wrap: break-word; /* Força el salt de línia si la paraula és molt llarga */
+            overflow: visible; 
+        }
+        .pdf-table th { background: #fdfaf3; font-size: 8pt; font-weight: bold; }
+        .pdf-time-cell { width: 18mm; text-align: center; background: #fafafa; font-size: 7pt; color: #666; vertical-align: middle; }
+        .pdf-session-title { font-size: 8pt; font-weight: bold; display: block; margin-bottom: 3px; border-bottom: 0.2pt solid rgba(0,0,0,0.05); }
+        .note-text { font-family: 'Kalam', cursive; white-space: pre-wrap; color: #333; line-height: 1.2; font-size: 7.5pt; }
+    </style>
+</head>
+<body>
+
+    <div class="controls-global">
+        <div class="btn-circle" onclick="toggleTemplateMode()" id="templateBtn" title="Configurar Horari">🛠️</div>
+        <div class="btn-circle" onclick="generatePDF()" title="PDF">📄</div>
+    </div>
+
+    <header>
+        <div id="statusIndicator" style="font-size: 0.7rem; color: #d4a373; font-weight: bold; visibility: hidden;">EDICIÓ HORARI BASE</div>
+        <input type="text" id="docentName" class="docent-input" placeholder="EL TEU NOM" oninput="saveData()">
+        <div style="margin-top:10px;">
+            <input type="week" id="weekPicker" onchange="updateMenuDates()" style="padding:5px; border-radius:5px; border:1px solid #ddd;">
+        </div>
+        <button class="btn-utility" onclick="clearFullWeek()" style="margin-top:10px; color:#ef4444; border:none; background:transparent; font-size:0.7rem;">🗑️ Buidar notes de la setmana</button>
+    </header>
+
+    <div class="days-container" id="mainMenu"></div>
+
+    <div id="dayOverlay" class="view-overlay">
+        <div style="display:flex; justify-content: space-between; align-items:center;">
+            <button onclick="closeOverlay('dayOverlay')" style="border:none; background:none; font-size:2rem; cursor:pointer;">✕</button>
+            <h2 id="dayTitle" style="font-size:1rem; margin:0;"></h2>
+            <button class="btn-utility" id="clearDayBtn" style="color:#ef4444">🗑️</button>
+        </div>
+        <div id="sessionsList" style="margin-top:15px;"></div>
+    </div>
+
+    <div id="editorOverlay" class="view-overlay">
+        <button onclick="closeOverlay('editorOverlay')" style="border:none; background:none; font-size:2rem; cursor:pointer;">✕</button>
+        <h3 id="editTime" style="color:var(--accent); margin:5px 0; font-size:1.1rem;"></h3>
+        <div id="nameInputContainer">
+            <input type="text" id="sessionNameInput" placeholder="Assignatura..." style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd;">
+            <div id="colorPickerContainer" style="display:flex; gap:8px; margin-top:12px;"></div>
+        </div>
+        <div id="progContainer">
+            <div style="display:flex; gap:8px; margin-top:10px;">
+                <button class="btn-utility" onclick="copyFromPreviousWeek()" id="copyPrevBtn">📋 Setmana anterior</button>
+                <button class="btn-utility" onclick="addLinkPrompt()" style="color:var(--c-link)">🔗 Enllaç/Drive</button>
+            </div>
+            <textarea id="progArea" placeholder="Notes de la sessió..."></textarea>
+        </div>
+        <button onclick="saveAndCloseEditor()" style="margin-top:15px; padding:15px; border-radius:12px; border:none; background:var(--accent); color:white; font-weight:600; width:100%;">GUARDAR</button>
+    </div>
+
+    <div id="pdf-template">
+        <div style="display:flex; justify-content:space-between; border-bottom:1pt solid #d4a373; padding-bottom:5px; margin-bottom:10px;">
+            <span id="pdf-docent" style="font-weight:bold; text-transform:uppercase; font-size:10pt;"></span>
+            <span id="pdf-curs" style="font-weight:bold; font-size:10pt;"></span>
+        </div>
+        <p id="pdf-dates" style="text-align:center; font-size:9pt; color:#666; margin-bottom: 10px;"></p>
+        <table class="pdf-table" id="pdf-table-content"></table>
+    </div>
+
+<script>
+    const timeSlots = [
+        {h: '8:30-8:45', fixed: "ASSEMBLEA"}, {h: '8:45-9:30'}, {h: '9:30-10:30'},
+        {h: '10:30-11:00', fixed: "PATI"}, {h: '11:00-12:00'}, {h: '12:00-13:00'},
+        {h: '13:00-14:00'}, {h: '15:00-15:15', fixed: "LECTURA"}, {h: '15:15-16:30'}
+    ];
+    const dayNames = ["", "Dilluns", "Dimarts", "Dimecres", "Dijous", "Divendres"];
+    const colors = ['#ffffff', '#fef3c7', '#e9edc9', '#fae1dd', '#e2eafc', '#f1f5f9'];
+    let db = JSON.parse(localStorage.getItem('agenda_v3')) || { template: {} };
+    let curSessionId = "", templateMode = false, selectedColor = "#ffffff";
+
+    const d = new Date();
+    const weekNo = Math.ceil((((d - new Date(d.getFullYear(),0,1)) / 86400000) + new Date(d.getFullYear(),0,1).getDay() + 1) / 7);
+    document.getElementById('weekPicker').value = `${d.getFullYear()}-W${String(weekNo).padStart(2,'0')}`;
+    if(db.docentName) document.getElementById('docentName').value = db.docentName;
+
+    function getDateOfISOWeek(w, y, dayIndex) {
+        const simple = new Date(y, 0, 1 + (w - 1) * 7);
+        const start = simple;
+        if (simple.getDay() <= 4) start.setDate(simple.getDate() - simple.getDay() + 1);
+        else start.setDate(simple.getDate() + 8 - simple.getDay());
+        const res = new Date(start); res.setDate(res.getDate() + (dayIndex - 1));
+        return res;
+    }
+
+    function updateMenuDates() {
+        const [y, w] = document.getElementById('weekPicker').value.split('-W');
+        const menu = document.getElementById('mainMenu'); menu.innerHTML = "";
+        for(let i=1; i<=5; i++) {
+            const date = getDateOfISOWeek(parseInt(w), parseInt(y), i);
+            menu.innerHTML += `<div class="day-btn" onclick="openDayEditor(${i})">
+                <span style="font-weight:600">${dayNames[i]}, ${date.toLocaleDateString('ca-ES', {day:'numeric', month:'long'})}</span>
+                <span>➔</span></div>`;
+        }
+    }
+
+    function openDayEditor(day) {
+        const week = document.getElementById('weekPicker').value;
+        const [y, w] = week.split('-W');
+        const dateShort = getDateOfISOWeek(parseInt(w), parseInt(y), day).toLocaleDateString('ca-ES', {day:'2-digit', month:'2-digit'});
+        document.getElementById('dayTitle').innerText = `${dayNames[day].toUpperCase()} (${dateShort})`;
+        document.getElementById('clearDayBtn').onclick = () => { if(confirm("Esborrar dia?")) { timeSlots.forEach((_,s)=>delete db[week+"-d"+day+"s"+s]); saveData(); openDayEditor(day); } };
+        
+        const list = document.getElementById('sessionsList'); list.innerHTML = "";
+        timeSlots.forEach((slot, idx) => {
+            const id = `d${day}s${idx}`;
+            const name = slot.fixed || db.template[id]?.name || "...";
+            const color = slot.fixed ? "#f1f5f9" : (db.template[id]?.color || "#fff");
+            list.innerHTML += `<div class="session-card" onclick="openEditor('${id}', '${slot.h}', ${!!slot.fixed})" style="background:${color}; border-left:${slot.fixed?'5px solid #cbd5e1':'none'}">
+                <div style="display:flex; justify-content:space-between;"><small>${slot.h}</small><b>${name}</b></div>
+                <div style="font-size:0.8rem; margin-top:5px; color:#666; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">${db[week+"-"+id] || ""}</div>
+            </div>`;
+        });
+        document.getElementById('dayOverlay').style.display = "flex";
+    }
+
+    function openEditor(id, time, fixed) {
+        curSessionId = id; const week = document.getElementById('weekPicker').value;
+        document.getElementById('editTime').innerText = (templateMode ? "FIXAR: " : "") + time;
+        document.getElementById('progArea').value = db[week + "-" + id] || "";
+        document.getElementById('nameInputContainer').style.display = fixed ? "none" : "block";
+        document.getElementById('progContainer').style.display = templateMode ? "none" : "block";
+        if(!fixed) {
+            document.getElementById('sessionNameInput').value = db.template[id]?.name || "";
+            selectedColor = db.template[id]?.color || "#ffffff";
+            renderColors();
+        }
+        document.getElementById('editorOverlay').style.display = "flex";
+    }
+
+    function renderColors() {
+        const cont = document.getElementById('colorPickerContainer'); cont.innerHTML = "";
+        colors.forEach(c => {
+            cont.innerHTML += `<div onclick="selectedColor='${c}'; renderColors()" style="background:${c}; width:28px; height:28px; border-radius:50%; border:${c===selectedColor?'3px solid #d4a373':'1px solid #ddd'}; cursor:pointer;"></div>`;
+        });
+    }
+
+    function saveAndCloseEditor() {
+        const week = document.getElementById('weekPicker').value;
+        if(templateMode) {
+            const slotIdx = curSessionId.split('s')[1];
+            if(!timeSlots[slotIdx].fixed) {
+                if(!db.template[curSessionId]) db.template[curSessionId] = {};
+                db.template[curSessionId].name = document.getElementById('sessionNameInput').value;
+                db.template[curSessionId].color = selectedColor;
+            }
+        } else {
+            db[week + "-" + curSessionId] = document.getElementById('progArea').value;
+        }
+        saveData(); closeOverlay('editorOverlay'); openDayEditor(parseInt(curSessionId.charAt(1)));
+    }
+
+    function addLinkPrompt() {
+        const url = prompt("Enganxa l'enllaç:");
+        if(url) { document.getElementById('progArea').value += (document.getElementById('progArea').value ? "\n" : "") + url; }
+    }
+
+    function copyFromPreviousWeek() {
+        let [y, w] = document.getElementById('weekPicker').value.split('-W').map(Number);
+        const prevWeek = w === 1 ? `${y-1}-W52` : `${y}-W${String(w-1).padStart(2,'0')}`;
+        const content = db[prevWeek + "-" + curSessionId];
+        if(content) document.getElementById('progArea').value = content;
+        else alert("Buit la setmana anterior.");
+    }
+
+    function generatePDF() {
+        const curs = prompt("Curs escolar?", db.cursEscolarPDF || "2025-2026"); if(!curs) return;
+        db.cursEscolarPDF = curs; saveData();
+        const weekVal = document.getElementById('weekPicker').value;
+        const [y, w] = weekVal.split('-W');
+        
+        document.getElementById('pdf-docent').innerText = "DOCENT: " + (db.docentName || "........");
+        document.getElementById('pdf-curs').innerText = "CURS " + curs;
+        document.getElementById('pdf-dates').innerText = `Setmana del ${getDateOfISOWeek(parseInt(w),parseInt(y),1).toLocaleDateString()} al ${getDateOfISOWeek(parseInt(w),parseInt(y),5).toLocaleDateString()}`;
+        
+        let h = `<thead><tr><th class="pdf-time-cell">HORA</th>`;
+        for(let i=1; i<=5; i++) {
+            const date = getDateOfISOWeek(parseInt(w),parseInt(y),i).toLocaleDateString('ca-ES',{day:'2-digit',month:'2-digit'});
+            h += `<th>${dayNames[i]}<br><span style="font-weight:normal; font-size:6pt">${date}</span></th>`;
+        }
+        h += `</tr></thead><tbody>`;
+        
+        timeSlots.forEach((slot, sIdx) => {
+            h += `<tr><td class="pdf-time-cell">${slot.h}</td>`;
+            for(let d=1; d<=5; d++) {
+                const id = `d${d}s${sIdx}`;
+                const name = slot.fixed || db.template[id]?.name || "";
+                const color = slot.fixed ? "#f1f5f9" : (db.template[id]?.color || "#fff");
+                const note = db[weekVal + "-" + id] || "";
+                const pdfNote = note.replace(/(https?:\/\/[^\s]+)/g, '<br><span style="color:#2563eb; font-size:6pt;">$1</span>');
+                h += `<td style="background:${color}">
+                    <span class="pdf-session-title">${name}</span>
+                    <div class="note-text">${pdfNote}</div>
+                </td>`;
+            }
+            h += `</tr>`;
+        });
+        h += `</tbody>`;
+        
+        document.getElementById('pdf-table-content').innerHTML = h;
+        const el = document.getElementById('pdf-template'); el.style.display='block';
+        
+        const opt = {
+            margin: 5,
+            filename: `Agenda_${weekVal}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        html2pdf().set(opt).from(el).save().then(()=>el.style.display='none');
+    }
+
+    function toggleTemplateMode() {
+        templateMode = !templateMode;
+        document.getElementById('templateBtn').style.background = templateMode ? "#d4a373" : "white";
+        document.getElementById('statusIndicator').style.visibility = templateMode ? "visible" : "hidden";
+    }
+
+    function clearFullWeek() { if(confirm("Esborrar totes les notes d'aquesta setmana?")) { const week = document.getElementById('weekPicker').value; Object.keys(db).forEach(k=>{if(k.startsWith(week)) delete db[k]}); saveData(); updateMenuDates(); } }
+    function saveData() { db.docentName = document.getElementById('docentName').value; localStorage.setItem('agenda_v3', JSON.stringify(db)); }
+    function closeOverlay(id) { document.getElementById(id).style.display = "none"; }
+    
+    updateMenuDates();
+</script>
+</body>
+</html>
