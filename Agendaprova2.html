@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>La Plana Digital v25 - Neta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Kalam:wght@300;400&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-paper: #fefaf0; --text-main: #5d544b; --accent: #d4a373;
+            --c-mus: #fef3c7; --c-hort: #e9edc9; --c-mates: #fae1dd;
+            --c-tac: #e2eafc; --c-pc-light: #f1f5f9; --c-pc-dark: #e2e8f0;
+            --c-tallers: #ecdcb0; --c-rosa1: #fbcfe8; --c-rosa2: #f9a8d4; --c-rosa3: #f472b6;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; background-color: #f7f3eb; 
+            background-image: url("https://www.transparenttextures.com/patterns/cream-paper.png");
+            color: var(--text-main); margin: 0; padding: 20px; 
+        }
+
+        .controls-global { position: fixed; top: 20px; right: 20px; z-index: 999; display: flex; gap: 10px; }
+        .btn-circle {
+            background: white; width: 50px; height: 50px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e5e0d8; cursor: pointer;
+        }
+
+        header { text-align: center; margin-bottom: 20px; }
+        .days-container { display: flex; flex-direction: column; gap: 10px; max-width: 400px; margin: 0 auto; }
+        .day-btn { padding: 20px; border-radius: 18px; background: white; border: 1px solid #e5e0d8; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+
+        .view-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-paper); z-index: 100; display: none; flex-direction: column; padding: 20px; }
+        textarea { width: 100%; height: 280px; border-radius: 18px; padding: 20px; font-family: 'Kalam', cursive; font-size: 1.1rem; border: 1px solid var(--accent); outline: none; }
+
+        /* --- PDF CONTROLAT A4 --- */
+        #pdf-template { 
+            display: none; background: white; 
+            width: 270mm; margin: 0 auto; padding: 10mm; box-sizing: border-box;
+        }
+        .pdf-table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 0.5pt solid #d4a373; }
+        .pdf-table th, .pdf-table td { border: 0.3pt solid #d4a373; padding: 5px; vertical-align: top; overflow: hidden; }
+        .pdf-header-cell { background: #fdfaf3; font-size: 8.5pt; font-weight: 600; text-align: center; color: #8b7e74; height: 25px; }
+        .time-cell { width: 22mm; text-align: center; font-size: 7pt; color: #999; vertical-align: middle; }
+        .content-cell b { font-size: 8.5pt; color: #5d544b; display: block; margin-bottom: 3px; }
+        .note-text { font-family: 'Kalam', cursive; font-size: 8.5pt; color: #666; line-height: 1.2; white-space: pre-wrap; }
+
+        /* Colors PDF */
+        .pdf-mus { background-color: var(--c-mus) !important; }
+        .pdf-hort { background-color: var(--c-hort) !important; }
+        .pdf-mates { background-color: var(--c-mates) !important; }
+        .pdf-tac { background-color: var(--c-tac) !important; }
+        .pdf-pc1 { background-color: var(--c-pc-light) !important; }
+        .pdf-pc2 { background-color: var(--c-pc-dark) !important; }
+        .pdf-tallers { background-color: var(--c-tallers) !important; }
+        .pdf-rosa1 { background-color: var(--c-rosa1) !important; }
+        .pdf-rosa2 { background-color: var(--c-rosa2) !important; }
+        .pdf-rosa3 { background-color: var(--c-rosa3) !important; }
+    </style>
+</head>
+<body>
+
+    <div class="controls-global">
+        <div class="btn-circle" onclick="generatePDF()" title="Generar PDF">✨</div>
+        <div id="syncStatusGlobal" class="btn-circle" onclick="forceSync()">☁️</div>
+    </div>
+
+    <header>
+        <h1 style="letter-spacing: 5px; font-weight: 300;">LA PLANA</h1>
+        <input type="week" id="weekPicker" style="padding:10px; border-radius:10px; border:1px solid #ddd; background:white; font-family:inherit;">
+    </header>
+
+    <div class="days-container" id="mainMenu">
+        <div class="day-btn" onclick="openDayEditor(1)">Dilluns 🌸</div>
+        <div class="day-btn" onclick="openDayEditor(2)">Dimarts 🌿</div>
+        <div class="day-btn" onclick="openDayEditor(3)">Dimecres ☀️</div>
+        <div class="day-btn" onclick="openDayEditor(4)">Dijous ☁️</div>
+        <div class="day-btn" onclick="openDayEditor(5)">Divendres 🎨</div>
+    </div>
+
+    <div id="dayOverlay" class="view-overlay">
+        <button onclick="closeOverlay('dayOverlay')" style="border:none; background:none; font-size:2.5rem; color:var(--accent);">←</button>
+        <h2 id="dayTitle" style="font-weight:300;"></h2>
+        <div id="sessionsList" style="overflow-y:auto;"></div>
+    </div>
+
+    <div id="editorOverlay" class="view-overlay">
+        <button onclick="closeOverlay('editorOverlay')" style="border:none; background:none; font-size:2.5rem; color:var(--accent);">←</button>
+        <h3 id="editTitle"></h3>
+        <textarea id="progArea" oninput="saveEntry()"></textarea>
+    </div>
+
+    <div id="pdf-template">
+        <div style="border-bottom: 1pt solid #d4a373; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 13pt; color: #d4a373; font-weight: 400; letter-spacing: 0.5px;">Programació 25-26 Especialista de música Escola La Plana</span>
+                <span id="pdf-date-range" style="font-size: 9.5pt; color: #888; font-style: italic; margin-top: 3px;"></span>
+            </div>
+        </div>
+        <table class="pdf-table" id="pdf-table-content"></table>
+    </div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2cYoDyYBJRP2eBmPjcA4iAnFWSMnRA2DaqcJvylrIOd2OEfBJ3FXJDn1zCnPd0tBG/exec";
+    
+    const timeSlots = [
+        {h: '8:30-8:45', dur: 15}, {h: '8:45-9:30', dur: 45}, {h: '9:30-10:30', dur: 60},
+        {h: '10:30-11:00', dur: 30}, {h: '11:00-11:15', dur: 15}, {h: '11:15-12:00', dur: 45},
+        {h: '12:00-13:00', dur: 60}, {h: '13:00-14:00', dur: 60}, {h: '15:15-16:30', dur: 75}
+    ];
+
+    const schedule = {
+        1: [
+            {h:'8:30-8:45', n:'Assemblea 👋', id:'dl1', c:''},
+            {h:'11:15-12:00', n:'Música 13 🎵', id:'dl2', c:'pdf-mus'},
+            {h:'12:00-13:00', n:'Hort CS 🌿', id:'dl3', c:'pdf-hort'},
+            {h:'13:00-14:00', n:'C. Hort 🧺 ✎', id:'dl4', c:''},
+            {h:'15:15-16:30', n:'Express@\'t CS 🎭', id:'dl5', c:'pdf-rosa1'}
+        ],
+        2: [
+            {h:'8:30-8:45', n:'Assemblea 👋', id:'dt1', c:''},
+            {h:'8:45-9:30', n:'Mates 6è 📐', id:'dt2', c:'pdf-mates'},
+            {h:'9:30-10:30', n:'Música CI 🎶', id:'dt3', c:'pdf-mus'},
+            {h:'10:30-11:00', n:'Pati 🍎', id:'dt4', c:''},
+            {h:'11:00-11:15', n:'Lectura 📖', id:'dt5', c:''},
+            {h:'11:15-12:00', n:'PC CM 💻', id:'dt6', c:'pdf-pc1'},
+            {h:'12:00-13:00', n:'Exclusiva ✎', id:'dt7', c:''},
+            {h:'13:00-14:00', n:'Exclusiva ✎', id:'dt8', c:''},
+            {h:'15:15-16:30', n:'Tallers CS 🎨', id:'dt9', c:'pdf-tallers'}
+        ],
+        3: [
+            {h:'8:30-8:45', n:'Assemblea 👋', id:'dc1', c:''},
+            {h:'8:45-9:30', n:'TAC 🖱️', id:'dc2', c:'pdf-tac'},
+            {h:'9:30-10:30', n:'Coord. TAC ⚙️ ✎', id:'dc3', c:'pdf-tac'},
+            {h:'12:00-13:00', n:'Hort CI / CM 🌱', id:'dc4', c:'pdf-hort'},
+            {h:'13:00-14:00', n:'Exclusiva ✎', id:'dc5', c:''}
+        ],
+        4: [
+            {h:'8:30-8:45', n:'Assemblea 👋', id:'dj1', c:''},
+            {h:'8:45-9:30', n:'Mates 6è 🔢', id:'dj2', c:'pdf-mates'},
+            {h:'10:30-11:00', n:'Pati ⚽', id:'dj3', c:''},
+            {h:'11:15-12:00', n:'Música CM 🎹', id:'dj4', c:'pdf-mus'},
+            {h:'12:00-13:00', n:'Hort CI 🌻', id:'dj5', c:'pdf-hort'},
+            {h:'13:00-14:00', n:'Exclusiva ✎', id:'dj6', c:''},
+            {h:'15:15-16:30', n:'Express@\'t CI 🎀', id:'dj7', c:'pdf-rosa2'}
+        ],
+        5: [
+            {h:'9:30-10:30', n:'PC CI 🖥️', id:'dv1', c:'pdf-pc2'},
+            {h:'10:30-11:00', n:'Pati 🚨', id:'dv2', c:''},
+            {h:'11:15-12:00', n:'Música 14/15 🎻', id:'dv3', c:'pdf-mus'},
+            {h:'12:00-13:00', n:'Música CS 🎼', id:'dv4', c:'pdf-mus'},
+            {h:'13:00-14:00', n:'Exclusiva ✎', id:'dv5', c:''},
+            {h:'15:15-16:30', n:'Express@\'t CM 🎤', id:'dv6', c:'pdf-rosa3'}
+        ]
+    };
+
+    let db = JSON.parse(localStorage.getItem('plana_v25')) || {};
+    let curId = "";
+
+    document.getElementById('weekPicker').value = "2026-W05";
+
+    function getFormattedDateRange(weekString) {
+        const [year, week] = weekString.split('-W');
+        const firstDayOfYear = new Date(year, 0, 1);
+        const days = (parseInt(week) - 1) * 7;
+        const monday = new Date(year, 0, 1 + days);
+        while (monday.getDay() !== 1) { monday.setDate(monday.getDate() - 1); }
+        const friday = new Date(monday);
+        friday.setDate(monday.getDate() + 4);
+
+        const options = { day: 'numeric', month: 'long' };
+        return `del ${monday.toLocaleDateString('ca-ES', options)} al ${friday.toLocaleDateString('ca-ES', options)} de ${year}`;
+    }
+
+    function openDayEditor(day) {
+        const names = ["", "Dilluns", "Dimarts", "Dimecres", "Dijous", "Divendres"];
+        document.getElementById('dayTitle').innerText = names[day];
+        const container = document.getElementById('sessionsList');
+        container.innerHTML = "";
+        schedule[day].forEach(s => {
+            container.innerHTML += `<div class="day-btn" style="margin-bottom:8px;" onclick="openEditor('${s.id}','${s.n}')">
+                <div><small style="display:block; color:#aaa;">${s.h}</small><b>${s.n}</b></div> <span>🖋️</span>
+            </div>`;
+        });
+        document.getElementById('dayOverlay').style.display = "flex";
+    }
+
+    function openEditor(id, name) {
+        curId = document.getElementById('weekPicker').value + "-" + id;
+        document.getElementById('editTitle').innerText = name;
+        document.getElementById('progArea').value = db[curId] || "";
+        document.getElementById('editorOverlay').style.display = "flex";
+    }
+
+    function saveEntry() {
+        db[curId] = document.getElementById('progArea').value;
+        localStorage.setItem('plana_v25', JSON.stringify(db));
+    }
+
+    function generatePDF() {
+        const week = document.getElementById('weekPicker').value;
+        document.getElementById('pdf-date-range').innerText = getFormattedDateRange(week);
+        const table = document.getElementById('pdf-table-content');
+        
+        let html = `<tr><th class="pdf-header-cell" style="width:10%">HORA</th><th class="pdf-header-cell">DILLUNS</th><th class="pdf-header-cell">DIMARTS</th><th class="pdf-header-cell">DIMECRES</th><th class="pdf-header-cell">DIJOUS</th><th class="pdf-header-cell">DIVENDRES</th></tr>`;
+        
+        timeSlots.forEach(slot => {
+            const hPt = slot.dur * 1.05; 
+            html += `<tr style="height: ${hPt}pt">`;
+            html += `<td class="time-cell">${slot.h}</td>`;
+            for(let d=1; d<=5; d++) {
+                const sess = schedule[d].find(s => s.h === slot.h);
+                if(sess) {
+                    const txt = db[week + "-" + sess.id] || "";
+                    html += `<td class="content-cell ${sess.c}">
+                        <b>${sess.n}</b>
+                        <div class="note-text">${txt}</div>
+                    </td>`;
+                } else { html += `<td class="content-cell"></td>`; }
+            }
+            html += `</tr>`;
+        });
+        
+        table.innerHTML = html;
+        const element = document.getElementById('pdf-template');
+        element.style.display = 'block';
+
+        const opt = {
+            margin: 5,
+            filename: `LaPlana_Musica_${week}.pdf`,
+            html2canvas: { scale: 3 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => element.style.display = 'none');
+    }
+
+    function forceSync() {
+        fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(db) })
+        .then(() => alert("Sincronitzat! ✨"));
+    }
+
+    function closeOverlay(id) { document.getElementById(id).style.display = "none"; }
+</script>
+</body>
+</html>
