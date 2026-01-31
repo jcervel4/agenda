@@ -3,245 +3,304 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>La Plana Digital v25 - Neta</title>
+    <title>Agenda Claustre La Plana</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Kalam:wght@300;400&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
             --bg-paper: #fefaf0; --text-main: #5d544b; --accent: #d4a373;
-            --c-mus: #fef3c7; --c-hort: #e9edc9; --c-mates: #fae1dd;
-            --c-tac: #e2eafc; --c-pc-light: #f1f5f9; --c-pc-dark: #e2e8f0;
-            --c-tallers: #ecdcb0; --c-rosa1: #fbcfe8; --c-rosa2: #f9a8d4; --c-rosa3: #f472b6;
+            --c-default: #ffffff; --c-gris: #f1f5f9; --c-link: #2563eb;
         }
 
         body { 
             font-family: 'Inter', sans-serif; background-color: #f7f3eb; 
             background-image: url("https://www.transparenttextures.com/patterns/cream-paper.png");
-            color: var(--text-main); margin: 0; padding: 20px; 
+            color: var(--text-main); margin: 0; padding: 15px; 
         }
 
-        .controls-global { position: fixed; top: 20px; right: 20px; z-index: 999; display: flex; gap: 10px; }
+        /* Botons Principals */
+        .controls-global { position: fixed; top: 15px; right: 15px; z-index: 999; display: flex; gap: 10px; }
         .btn-circle {
-            background: white; width: 50px; height: 50px; border-radius: 50%;
+            background: white; width: 45px; height: 45px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e5e0d8; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); border: 1px solid #e5e0d8; cursor: pointer; font-size: 1.2rem;
         }
 
-        header { text-align: center; margin-bottom: 20px; }
-        .days-container { display: flex; flex-direction: column; gap: 10px; max-width: 400px; margin: 0 auto; }
-        .day-btn { padding: 20px; border-radius: 18px; background: white; border: 1px solid #e5e0d8; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-
-        .view-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-paper); z-index: 100; display: none; flex-direction: column; padding: 20px; }
-        textarea { width: 100%; height: 280px; border-radius: 18px; padding: 20px; font-family: 'Kalam', cursive; font-size: 1.1rem; border: 1px solid var(--accent); outline: none; }
-
-        /* --- PDF CONTROLAT A4 --- */
-        #pdf-template { 
-            display: none; background: white; 
-            width: 270mm; margin: 0 auto; padding: 10mm; box-sizing: border-box;
+        header { text-align: center; margin-bottom: 20px; padding-top: 10px; }
+        .docent-input {
+            border: none; background: rgba(255,255,255,0.6); border-radius: 8px;
+            font-size: 1.1rem; text-align: center; width: 85%; max-width: 320px;
+            color: var(--accent); font-family: 'Kalam', cursive; outline: none; padding: 5px;
         }
-        .pdf-table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 0.5pt solid #d4a373; }
-        .pdf-table th, .pdf-table td { border: 0.3pt solid #d4a373; padding: 5px; vertical-align: top; overflow: hidden; }
-        .pdf-header-cell { background: #fdfaf3; font-size: 8.5pt; font-weight: 600; text-align: center; color: #8b7e74; height: 25px; }
-        .time-cell { width: 22mm; text-align: center; font-size: 7pt; color: #999; vertical-align: middle; }
-        .content-cell b { font-size: 8.5pt; color: #5d544b; display: block; margin-bottom: 3px; }
-        .note-text { font-family: 'Kalam', cursive; font-size: 8.5pt; color: #666; line-height: 1.2; white-space: pre-wrap; }
 
-        /* Colors PDF */
-        .pdf-mus { background-color: var(--c-mus) !important; }
-        .pdf-hort { background-color: var(--c-hort) !important; }
-        .pdf-mates { background-color: var(--c-mates) !important; }
-        .pdf-tac { background-color: var(--c-tac) !important; }
-        .pdf-pc1 { background-color: var(--c-pc-light) !important; }
-        .pdf-pc2 { background-color: var(--c-pc-dark) !important; }
-        .pdf-tallers { background-color: var(--c-tallers) !important; }
-        .pdf-rosa1 { background-color: var(--c-rosa1) !important; }
-        .pdf-rosa2 { background-color: var(--c-rosa2) !important; }
-        .pdf-rosa3 { background-color: var(--c-rosa3) !important; }
+        /* Llistat de Dies */
+        .days-container { display: flex; flex-direction: column; gap: 12px; max-width: 480px; margin: 0 auto; }
+        .day-btn { 
+            padding: 20px; border-radius: 18px; background: white; 
+            border: 1px solid #e5e0d8; cursor: pointer; 
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .day-text { font-weight: 600; font-size: 1.1rem; color: var(--text-main); }
+
+        /* Overlays i Editor */
+        .view-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-paper); z-index: 1000; display: none; flex-direction: column; padding: 20px; overflow-y: auto; }
+        .session-card { background: white; padding: 15px; border-radius: 14px; margin-bottom: 12px; border: 1px solid #eee; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        
+        textarea { width: 100%; height: 250px; border-radius: 12px; padding: 15px; font-family: 'Kalam', cursive; font-size: 1.1rem; border: 1px solid var(--accent); outline: none; margin-top: 10px; box-sizing: border-box; background: #fffcf5; }
+        
+        .btn-utility { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 10px; font-size: 0.85rem; cursor: pointer; font-weight: 600; }
+        .btn-save { margin-top: 20px; padding: 18px; border-radius: 15px; border: none; background: var(--accent); color: white; font-weight: 600; width: 100%; font-size: 1.1rem; cursor: pointer; }
+
+        /* Estils PDF dinàmics */
+        #pdf-template { display: none; background: white; width: 287mm; padding: 8mm; }
+        .pdf-table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 1pt solid #d4a373; }
+        .pdf-table th, .pdf-table td { border: 0.5pt solid #d4a373; padding: 6px; vertical-align: top; word-wrap: break-word; overflow: visible; }
+        .pdf-header-cell { background: #fdfaf3; font-size: 8.5pt; font-weight: bold; text-align: center; }
+        .pdf-time { width: 18mm; text-align: center; background: #fafafa; font-size: 7.5pt; color: #777; vertical-align: middle; }
+        .pdf-title { font-size: 8.5pt; font-weight: bold; border-bottom: 0.5pt solid #eee; margin-bottom: 4px; display: block; color: var(--text-main); }
+        .note-text { font-family: 'Kalam', cursive; white-space: pre-wrap; font-size: 8pt; color: #444; line-height: 1.3; }
     </style>
 </head>
 <body>
 
     <div class="controls-global">
-        <div class="btn-circle" onclick="generatePDF()" title="Generar PDF">✨</div>
-        <div id="syncStatusGlobal" class="btn-circle" onclick="forceSync()">☁️</div>
+        <div class="btn-circle" onclick="toggleTemplateMode()" id="templateBtn" title="Configurar Horari Base">🛠️</div>
+        <div class="btn-circle" onclick="generatePDF()" title="Generar PDF">📄</div>
     </div>
 
     <header>
-        <h1 style="letter-spacing: 5px; font-weight: 300;">LA PLANA</h1>
-        <input type="week" id="weekPicker" style="padding:10px; border-radius:10px; border:1px solid #ddd; background:white; font-family:inherit;">
+        <div id="statusIndicator" style="font-size: 0.75rem; color: #d4a373; font-weight: bold; visibility: hidden; margin-bottom: 5px;">EDICIÓ HORARI BASE (ES REPETEIX)</div>
+        <input type="text" id="docentName" class="docent-input" placeholder="ESCRIU EL TEU NOM" oninput="saveData()">
+        <div style="margin-top:12px;">
+            <input type="week" id="weekPicker" onchange="updateMenuDates()" style="padding:8px; border-radius:8px; border:1px solid #ddd; font-family: inherit;">
+        </div>
+        <button class="btn-utility" onclick="clearFullWeek()" style="margin-top:10px; color:#ef4444; border:none; background:transparent; font-size:0.75rem;">🗑️ Buidar notes d'aquesta setmana</button>
     </header>
 
-    <div class="days-container" id="mainMenu">
-        <div class="day-btn" onclick="openDayEditor(1)">Dilluns 🌸</div>
-        <div class="day-btn" onclick="openDayEditor(2)">Dimarts 🌿</div>
-        <div class="day-btn" onclick="openDayEditor(3)">Dimecres ☀️</div>
-        <div class="day-btn" onclick="openDayEditor(4)">Dijous ☁️</div>
-        <div class="day-btn" onclick="openDayEditor(5)">Divendres 🎨</div>
-    </div>
+    <div class="days-container" id="mainMenu"></div>
 
     <div id="dayOverlay" class="view-overlay">
-        <button onclick="closeOverlay('dayOverlay')" style="border:none; background:none; font-size:2.5rem; color:var(--accent);">←</button>
-        <h2 id="dayTitle" style="font-weight:300;"></h2>
-        <div id="sessionsList" style="overflow-y:auto;"></div>
+        <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 10px;">
+            <button onclick="closeOverlay('dayOverlay')" style="border:none; background:none; font-size:2.2rem; cursor:pointer; color: #999;">✕</button>
+            <h2 id="dayTitle" style="font-size:1.1rem; margin:0; font-weight: 600; color: var(--accent);"></h2>
+            <button class="btn-utility" id="clearDayBtn" style="color:#ef4444">🗑️</button>
+        </div>
+        <div id="sessionsList"></div>
     </div>
 
     <div id="editorOverlay" class="view-overlay">
-        <button onclick="closeOverlay('editorOverlay')" style="border:none; background:none; font-size:2.5rem; color:var(--accent);">←</button>
-        <h3 id="editTitle"></h3>
-        <textarea id="progArea" oninput="saveEntry()"></textarea>
+        <div style="display:flex; justify-content: space-between; align-items: center;">
+            <button onclick="closeOverlay('editorOverlay')" style="border:none; background:none; font-size:2.2rem; cursor:pointer; color: #999;">✕</button>
+            <h3 id="editTime" style="color:var(--accent); margin:0; font-size:1.1rem;"></h3>
+            <div style="width: 40px;"></div>
+        </div>
+        
+        <div id="nameInputContainer" style="margin-top:15px;">
+            <input type="text" id="sessionNameInput" placeholder="Nom de l'assignatura..." style="width:100%; padding:12px; border-radius:10px; border:1px solid #ddd; font-size:1rem; outline-color: var(--accent);">
+            <div id="colorPickerContainer" style="display:flex; gap:10px; margin-top:15px; justify-content: center;"></div>
+        </div>
+        
+        <div id="progContainer">
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn-utility" onclick="copyFromPreviousWeek()" id="copyPrevBtn">📋 Setmana anterior</button>
+                <button class="btn-utility" onclick="addLinkPrompt()" style="color:var(--c-link)">🔗 Enllaç/Drive</button>
+            </div>
+            <textarea id="progArea" placeholder="Què farem en aquesta sessió?"></textarea>
+        </div>
+        
+        <button onclick="saveAndCloseEditor()" class="btn-save">GUARDAR CANVIS</button>
     </div>
 
     <div id="pdf-template">
-        <div style="border-bottom: 1pt solid #d4a373; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-end;">
-            <div style="display: flex; flex-direction: column;">
-                <span style="font-size: 13pt; color: #d4a373; font-weight: 400; letter-spacing: 0.5px;">Programació 25-26 Especialista de música Escola La Plana</span>
-                <span id="pdf-date-range" style="font-size: 9.5pt; color: #888; font-style: italic; margin-top: 3px;"></span>
-            </div>
+        <div style="display:flex; justify-content:space-between; border-bottom:1.5pt solid #d4a373; padding-bottom:5px; margin-bottom:10px;">
+            <span id="pdf-docent" style="font-weight:600; text-transform:uppercase; font-size:11pt; color: #d4a373;"></span>
+            <span id="pdf-curs" style="font-weight:600; font-size:11pt; color: #d4a373;"></span>
         </div>
+        <p id="pdf-dates" style="text-align:center; font-size:10pt; color:#666; margin: 5px 0 15px 0; font-weight: 400;"></p>
         <table class="pdf-table" id="pdf-table-content"></table>
     </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2cYoDyYBJRP2eBmPjcA4iAnFWSMnRA2DaqcJvylrIOd2OEfBJ3FXJDn1zCnPd0tBG/exec";
-    
     const timeSlots = [
-        {h: '8:30-8:45', dur: 15}, {h: '8:45-9:30', dur: 45}, {h: '9:30-10:30', dur: 60},
-        {h: '10:30-11:00', dur: 30}, {h: '11:00-11:15', dur: 15}, {h: '11:15-12:00', dur: 45},
-        {h: '12:00-13:00', dur: 60}, {h: '13:00-14:00', dur: 60}, {h: '15:15-16:30', dur: 75}
+        {h: '8:30-8:45', fixed: "ASSEMBLEA"}, {h: '8:45-9:30'}, {h: '9:30-10:30'},
+        {h: '10:30-11:00', fixed: "PATI"}, {h: '11:00-12:00'}, {h: '12:00-13:00'},
+        {h: '13:00-14:00'}, {h: '15:00-15:15', fixed: "LECTURA"}, {h: '15:15-16:30'}
     ];
+    const dayNames = ["", "Dilluns", "Dimarts", "Dimecres", "Dijous", "Divendres"];
+    const colors = ['#ffffff', '#fef3c7', '#e9edc9', '#fae1dd', '#e2eafc', '#f1f5f9'];
+    
+    let db = JSON.parse(localStorage.getItem('agenda_v3')) || { template: {} };
+    let curSessionId = "", templateMode = false, selectedColor = "#ffffff";
 
-    const schedule = {
-        1: [
-            {h:'8:30-8:45', n:'Assemblea 👋', id:'dl1', c:''},
-            {h:'11:15-12:00', n:'Música 13 🎵', id:'dl2', c:'pdf-mus'},
-            {h:'12:00-13:00', n:'Hort CS 🌿', id:'dl3', c:'pdf-hort'},
-            {h:'13:00-14:00', n:'C. Hort 🧺 ✎', id:'dl4', c:''},
-            {h:'15:15-16:30', n:'Express@\'t CS 🎭', id:'dl5', c:'pdf-rosa1'}
-        ],
-        2: [
-            {h:'8:30-8:45', n:'Assemblea 👋', id:'dt1', c:''},
-            {h:'8:45-9:30', n:'Mates 6è 📐', id:'dt2', c:'pdf-mates'},
-            {h:'9:30-10:30', n:'Música CI 🎶', id:'dt3', c:'pdf-mus'},
-            {h:'10:30-11:00', n:'Pati 🍎', id:'dt4', c:''},
-            {h:'11:00-11:15', n:'Lectura 📖', id:'dt5', c:''},
-            {h:'11:15-12:00', n:'PC CM 💻', id:'dt6', c:'pdf-pc1'},
-            {h:'12:00-13:00', n:'Exclusiva ✎', id:'dt7', c:''},
-            {h:'13:00-14:00', n:'Exclusiva ✎', id:'dt8', c:''},
-            {h:'15:15-16:30', n:'Tallers CS 🎨', id:'dt9', c:'pdf-tallers'}
-        ],
-        3: [
-            {h:'8:30-8:45', n:'Assemblea 👋', id:'dc1', c:''},
-            {h:'8:45-9:30', n:'TAC 🖱️', id:'dc2', c:'pdf-tac'},
-            {h:'9:30-10:30', n:'Coord. TAC ⚙️ ✎', id:'dc3', c:'pdf-tac'},
-            {h:'12:00-13:00', n:'Hort CI / CM 🌱', id:'dc4', c:'pdf-hort'},
-            {h:'13:00-14:00', n:'Exclusiva ✎', id:'dc5', c:''}
-        ],
-        4: [
-            {h:'8:30-8:45', n:'Assemblea 👋', id:'dj1', c:''},
-            {h:'8:45-9:30', n:'Mates 6è 🔢', id:'dj2', c:'pdf-mates'},
-            {h:'10:30-11:00', n:'Pati ⚽', id:'dj3', c:''},
-            {h:'11:15-12:00', n:'Música CM 🎹', id:'dj4', c:'pdf-mus'},
-            {h:'12:00-13:00', n:'Hort CI 🌻', id:'dj5', c:'pdf-hort'},
-            {h:'13:00-14:00', n:'Exclusiva ✎', id:'dj6', c:''},
-            {h:'15:15-16:30', n:'Express@\'t CI 🎀', id:'dj7', c:'pdf-rosa2'}
-        ],
-        5: [
-            {h:'9:30-10:30', n:'PC CI 🖥️', id:'dv1', c:'pdf-pc2'},
-            {h:'10:30-11:00', n:'Pati 🚨', id:'dv2', c:''},
-            {h:'11:15-12:00', n:'Música 14/15 🎻', id:'dv3', c:'pdf-mus'},
-            {h:'12:00-13:00', n:'Música CS 🎼', id:'dv4', c:'pdf-mus'},
-            {h:'13:00-14:00', n:'Exclusiva ✎', id:'dv5', c:''},
-            {h:'15:15-16:30', n:'Express@\'t CM 🎤', id:'dv6', c:'pdf-rosa3'}
-        ]
-    };
+    // Data inicial
+    const d = new Date();
+    const weekNo = Math.ceil((((d - new Date(d.getFullYear(),0,1)) / 86400000) + new Date(d.getFullYear(),0,1).getDay() + 1) / 7);
+    document.getElementById('weekPicker').value = `${d.getFullYear()}-W${String(weekNo).padStart(2,'0')}`;
+    if(db.docentName) document.getElementById('docentName').value = db.docentName;
 
-    let db = JSON.parse(localStorage.getItem('plana_v25')) || {};
-    let curId = "";
+    function getDateOfISOWeek(w, y, dayIndex) {
+        const simple = new Date(y, 0, 1 + (w - 1) * 7);
+        const start = simple;
+        if (simple.getDay() <= 4) start.setDate(simple.getDate() - simple.getDay() + 1);
+        else start.setDate(simple.getDate() + 8 - simple.getDay());
+        const res = new Date(start); res.setDate(res.getDate() + (dayIndex - 1));
+        return res;
+    }
 
-    document.getElementById('weekPicker').value = "2026-W05";
-
-    function getFormattedDateRange(weekString) {
-        const [year, week] = weekString.split('-W');
-        const firstDayOfYear = new Date(year, 0, 1);
-        const days = (parseInt(week) - 1) * 7;
-        const monday = new Date(year, 0, 1 + days);
-        while (monday.getDay() !== 1) { monday.setDate(monday.getDate() - 1); }
-        const friday = new Date(monday);
-        friday.setDate(monday.getDate() + 4);
-
-        const options = { day: 'numeric', month: 'long' };
-        return `del ${monday.toLocaleDateString('ca-ES', options)} al ${friday.toLocaleDateString('ca-ES', options)} de ${year}`;
+    function updateMenuDates() {
+        const val = document.getElementById('weekPicker').value;
+        if(!val) return;
+        const [y, w] = val.split('-W');
+        const menu = document.getElementById('mainMenu'); menu.innerHTML = "";
+        for(let i=1; i<=5; i++) {
+            const date = getDateOfISOWeek(parseInt(w), parseInt(y), i);
+            const dateStr = date.toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' });
+            menu.innerHTML += `<div class="day-btn" onclick="openDayEditor(${i})">
+                <span class="day-text">${dayNames[i]}, ${dateStr}</span>
+                <span style="color: #ccc;">➔</span></div>`;
+        }
     }
 
     function openDayEditor(day) {
-        const names = ["", "Dilluns", "Dimarts", "Dimecres", "Dijous", "Divendres"];
-        document.getElementById('dayTitle').innerText = names[day];
-        const container = document.getElementById('sessionsList');
-        container.innerHTML = "";
-        schedule[day].forEach(s => {
-            container.innerHTML += `<div class="day-btn" style="margin-bottom:8px;" onclick="openEditor('${s.id}','${s.n}')">
-                <div><small style="display:block; color:#aaa;">${s.h}</small><b>${s.n}</b></div> <span>🖋️</span>
+        const week = document.getElementById('weekPicker').value;
+        const [y, w] = week.split('-W');
+        const dateShort = getDateOfISOWeek(parseInt(w), parseInt(y), day).toLocaleDateString('ca-ES', {day:'2-digit', month:'2-digit'});
+        
+        document.getElementById('dayTitle').innerText = `${dayNames[day].toUpperCase()} (${dateShort})`;
+        document.getElementById('clearDayBtn').onclick = () => { if(confirm("Esborrar contingut d'aquest dia?")) { timeSlots.forEach((_,s)=>delete db[week+"-d"+day+"s"+s]); saveData(); openDayEditor(day); } };
+        
+        const list = document.getElementById('sessionsList'); list.innerHTML = "";
+        timeSlots.forEach((slot, idx) => {
+            const id = `d${day}s${idx}`;
+            const name = slot.fixed || db.template[id]?.name || "...";
+            const color = slot.fixed ? "#f1f5f9" : (db.template[id]?.color || "#fff");
+            const note = db[week + "-" + id] || "";
+            
+            list.innerHTML += `<div class="session-card" onclick="openEditor('${id}', '${slot.h}', ${!!slot.fixed})" style="background:${color}; border-left:${slot.fixed?'6px solid #cbd5e1':'none'}">
+                <div style="display:flex; justify-content:space-between; align-items:center;"><small style="color:#888;">${slot.h}</small><b style="font-size:1rem;">${name}</b></div>
+                <div style="font-size:0.85rem; margin-top:6px; color:#666; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${note}</div>
             </div>`;
         });
         document.getElementById('dayOverlay').style.display = "flex";
     }
 
-    function openEditor(id, name) {
-        curId = document.getElementById('weekPicker').value + "-" + id;
-        document.getElementById('editTitle').innerText = name;
-        document.getElementById('progArea').value = db[curId] || "";
+    function openEditor(id, time, fixed) {
+        curSessionId = id; const week = document.getElementById('weekPicker').value;
+        document.getElementById('editTime').innerText = (templateMode ? "FIXAR HORARI: " : "") + time;
+        document.getElementById('progArea').value = db[week + "-" + id] || "";
+        document.getElementById('nameInputContainer').style.display = fixed ? "none" : "block";
+        document.getElementById('progContainer').style.display = templateMode ? "none" : "block";
+        
+        if(!fixed) {
+            document.getElementById('sessionNameInput').value = db.template[id]?.name || "";
+            selectedColor = db.template[id]?.color || "#ffffff";
+            renderColors();
+        }
         document.getElementById('editorOverlay').style.display = "flex";
     }
 
-    function saveEntry() {
-        db[curId] = document.getElementById('progArea').value;
-        localStorage.setItem('plana_v25', JSON.stringify(db));
+    function renderColors() {
+        const cont = document.getElementById('colorPickerContainer'); cont.innerHTML = "";
+        colors.forEach(c => {
+            cont.innerHTML += `<div onclick="selectedColor='${c}'; renderColors()" style="background:${c}; width:32px; height:32px; border-radius:50%; border:${c===selectedColor?'3px solid var(--accent)':'1px solid #ddd'}; cursor:pointer;"></div>`;
+        });
+    }
+
+    function saveAndCloseEditor() {
+        const week = document.getElementById('weekPicker').value;
+        if(templateMode) {
+            const slotIdx = curSessionId.split('s')[1];
+            if(!timeSlots[slotIdx].fixed) {
+                if(!db.template[curSessionId]) db.template[curSessionId] = {};
+                db.template[curSessionId].name = document.getElementById('sessionNameInput').value;
+                db.template[curSessionId].color = selectedColor;
+            }
+        } else {
+            db[week + "-" + curSessionId] = document.getElementById('progArea').value;
+        }
+        saveData(); closeOverlay('editorOverlay'); openDayEditor(parseInt(curSessionId.charAt(1)));
+    }
+
+    function copyFromPreviousWeek() {
+        let [y, w] = document.getElementById('weekPicker').value.split('-W').map(Number);
+        const prevWeek = w === 1 ? `${y-1}-W52` : `${y}-W${String(w-1).padStart(2,'0')}`;
+        const content = db[prevWeek + "-" + curSessionId];
+        if(content) {
+            document.getElementById('progArea').value = content;
+        } else {
+            alert("No hi ha dades guardades de la setmana anterior.");
+        }
+    }
+
+    function addLinkPrompt() {
+        const url = prompt("Enganxa l'enllaç web o de Google Drive:");
+        if(url) {
+            const area = document.getElementById('progArea');
+            area.value += (area.value ? "\n" : "") + url;
+        }
     }
 
     function generatePDF() {
-        const week = document.getElementById('weekPicker').value;
-        document.getElementById('pdf-date-range').innerText = getFormattedDateRange(week);
-        const table = document.getElementById('pdf-table-content');
+        const curs = prompt("Curs escolar?", db.cursEscolarPDF || "2025-2026"); if(!curs) return;
+        db.cursEscolarPDF = curs; saveData();
+        const weekVal = document.getElementById('weekPicker').value;
+        const [y, w] = weekVal.split('-W');
         
-        let html = `<tr><th class="pdf-header-cell" style="width:10%">HORA</th><th class="pdf-header-cell">DILLUNS</th><th class="pdf-header-cell">DIMARTS</th><th class="pdf-header-cell">DIMECRES</th><th class="pdf-header-cell">DIJOUS</th><th class="pdf-header-cell">DIVENDRES</th></tr>`;
+        document.getElementById('pdf-docent').innerText = "DOCENT: " + (db.docentName || "........");
+        document.getElementById('pdf-curs').innerText = "CURS " + curs;
+        document.getElementById('pdf-dates').innerText = `Setmana del ${getDateOfISOWeek(parseInt(w),parseInt(y),1).toLocaleDateString('ca-ES')} al ${getDateOfISOWeek(parseInt(w),parseInt(y),5).toLocaleDateString('ca-ES')}`;
         
-        timeSlots.forEach(slot => {
-            const hPt = slot.dur * 1.05; 
-            html += `<tr style="height: ${hPt}pt">`;
-            html += `<td class="time-cell">${slot.h}</td>`;
+        let h = `<thead><tr><th class="pdf-time">HORA</th>`;
+        for(let i=1; i<=5; i++) {
+            const date = getDateOfISOWeek(parseInt(w),parseInt(y),i).toLocaleDateString('ca-ES',{day:'2-digit',month:'2-digit'});
+            h += `<th class="pdf-header-cell">${dayNames[i]}<br><span style="font-weight:normal; font-size:6.5pt">${date}</span></th>`;
+        }
+        h += `</tr></thead><tbody>`;
+        
+        timeSlots.forEach((slot, sIdx) => {
+            h += `<tr><td class="pdf-time">${slot.h}</td>`;
             for(let d=1; d<=5; d++) {
-                const sess = schedule[d].find(s => s.h === slot.h);
-                if(sess) {
-                    const txt = db[week + "-" + sess.id] || "";
-                    html += `<td class="content-cell ${sess.c}">
-                        <b>${sess.n}</b>
-                        <div class="note-text">${txt}</div>
-                    </td>`;
-                } else { html += `<td class="content-cell"></td>`; }
+                const id = `d${d}s${sIdx}`;
+                const name = slot.fixed || db.template[id]?.name || "";
+                const color = slot.fixed ? "#f1f5f9" : (db.template[id]?.color || "#fff");
+                const note = db[weekVal + "-" + id] || "";
+                const pdfNote = note.replace(/(https?:\/\/[^\s]+)/g, '<br><span style="color:#2563eb; font-size:6pt;">$1</span>');
+                h += `<td style="background:${color}">
+                    <span class="pdf-title">${name}</span>
+                    <div class="note-text">${pdfNote}</div>
+                </td>`;
             }
-            html += `</tr>`;
+            h += `</tr>`;
         });
+        h += `</tbody>`;
         
-        table.innerHTML = html;
-        const element = document.getElementById('pdf-template');
-        element.style.display = 'block';
-
+        document.getElementById('pdf-table-content').innerHTML = h;
+        const el = document.getElementById('pdf-template'); el.style.display='block';
+        
         const opt = {
-            margin: 5,
-            filename: `LaPlana_Musica_${week}.pdf`,
-            html2canvas: { scale: 3 },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            margin: 5, filename: `Agenda_${weekVal}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+            pagebreak: { mode: 'avoid-all' }
         };
 
-        html2pdf().set(opt).from(element).save().then(() => element.style.display = 'none');
+        html2pdf().set(opt).from(el).save().then(()=>el.style.display='none');
     }
 
-    function forceSync() {
-        fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(db) })
-        .then(() => alert("Sincronitzat! ✨"));
+    function toggleTemplateMode() {
+        templateMode = !templateMode;
+        document.getElementById('templateBtn').style.background = templateMode ? "var(--accent)" : "white";
+        document.getElementById('templateBtn').style.color = templateMode ? "white" : "black";
+        document.getElementById('statusIndicator').style.visibility = templateMode ? "visible" : "hidden";
     }
 
+    function clearFullWeek() { if(confirm("Vols esborrar TOTES les notes d'aquesta setmana?")) { const week = document.getElementById('weekPicker').value; Object.keys(db).forEach(k=>{if(k.startsWith(week)) delete db[k]}); saveData(); updateMenuDates(); } }
+    function saveData() { db.docentName = document.getElementById('docentName').value; localStorage.setItem('agenda_v3', JSON.stringify(db)); }
     function closeOverlay(id) { document.getElementById(id).style.display = "none"; }
+    
+    updateMenuDates();
 </script>
 </body>
 </html>
